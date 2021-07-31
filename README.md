@@ -37,6 +37,8 @@ This is a quick IDA hack to add a 0x prefix to disassembly view addresses.
 Because I'm damn tired of having to type it everytime I copy one address to lldb or a calculator.  
 Been annoying me for years and I decided to do something about it today.  
 
+![screenshot](rsrc/screenshot.png)
+
 ### How
 
 Disassemble `libida64.dylib` and look at address `0x1C800`.

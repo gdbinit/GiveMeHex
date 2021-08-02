@@ -77,28 +77,22 @@ struct givemehex_prefix_t : public user_defined_prefix_t
     
     out->qclear();        // empty prefix by default
 
-    // We want to display the prefix only the lines which
-    // contain the instruction itself
-
-    if ( indent != -1 )           // a directive
-      return;
-
-    if ( line[0] == '\0' )        // empty line
-      return;
-
-    // We don't want the prefix to be printed again for other lines of the
-    // same instruction/data. For that we remember the line number
-    // and compare it before generating the prefix
-
-    if ( pd->old_ea == ea && pd->old_lnnum == lnnum )
-      return;
-
     // in IDA 7.6 SP1 the original string is located at offset 0x68
     // so we just retrieve the pointer to it
     char *original = (char*)(*(uint64_t*)(class_addr+0x68));
 #if DEBUG
-    msg("class addr: 0x%llx string: %s\n", class_addr, original);
+    msg("class addr: 0x%llx addr: 0x%llx string: %s\n", class_addr, ea, original);
 #endif
+    if (original == nullptr) {
+      return;
+    }
+    // do nothing if it's the same address (comments, empty lines, directives, etc)
+    // we already modified the original string on the first hit 
+    // and it's reused for lines with same address
+    if (pd->old_ea == ea) {
+      return;
+    }
+
     // now we iterate over the original string and find the first zero for the address
     // assumes the address is not very high (for example XNU kernel addresses)
     // have I told you this is fragile hack? friday night, too lazy to get this better
@@ -112,7 +106,7 @@ struct givemehex_prefix_t : public user_defined_prefix_t
         char y = *(x+1);
         if (y && y == 0x30) {
           // hax the original string
-          original[count+1] = 0x78; // 'x'
+          original[count+1] = 'x';
           break;
         }
       }

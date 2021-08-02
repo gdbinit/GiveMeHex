@@ -38,6 +38,9 @@
 #include <loader.hpp>
 #include <kernwin.hpp>
 
+// in IDA 7.6 SP1 the original string is located at offset 0x68
+#define ORIGINAL_STRING_OFFSET  0x68
+
 struct plugin_data_t : public plugmod_t
 {
   ea_t old_ea = BADADDR;
@@ -77,9 +80,8 @@ struct givemehex_prefix_t : public user_defined_prefix_t
     
     out->qclear();        // empty prefix by default
 
-    // in IDA 7.6 SP1 the original string is located at offset 0x68
-    // so we just retrieve the pointer to it
-    char *original = (char*)(*(uint64_t*)(class_addr+0x68));
+    // retrieve pointer to the original string from the class
+    char *original = (char*)(*(uint64_t*)(class_addr + ORIGINAL_STRING_OFFSET));
 #if DEBUG
     msg("class addr: 0x%llx addr: 0x%llx string: %s\n", class_addr, ea, original);
 #endif
@@ -93,27 +95,34 @@ struct givemehex_prefix_t : public user_defined_prefix_t
       return;
     }
 
-    // now we iterate over the original string and find the first zero for the address
-    // assumes the address is not very high (for example XNU kernel addresses)
-    // have I told you this is fragile hack? friday night, too lazy to get this better
+    // if address representation is set to function offsets in options
+    // we skip it since there is nothing to do
+    if (strchr(original, '+')) {
+      return;
+    }
+
+    // check if include segment addresses option is in use (default)
+    // if use segment names isn't set we would hit the segment address instead
     char *x = original;
-    int count = 0;
+    char *segment = strchr(original, ':');
+    if (segment != NULL) {
+      x = segment;
+    }
+
+    // now we iterate over the string and find the first digit
     while (*x) {
-      // when we found the first zero
-      // we verify if next character is also a zero
-      // and modify it to an 'x' and we have what we wanted
-      if (*x == 0x30) {
-        char y = *(x+1);
-        if (y && y == 0x30) {
-          // hax the original string
-          original[count+1] = 'x';
-          break;
+      if (isdigit(*x)) {
+        // check if address can be hacked
+        // we can't for XNU addresses that are as high as FFFFFF80006F0E50 for example
+        if (*x != '0' || (*(x+1) && *(x+1) != '0')) {
+          return;
         }
+        // hax the string
+        *(x+1) = 'x';
+        break;
       }
-      count++;
       x++;
     }
-    
     // Remember the address and line number we produced the line prefix for:
     pd->old_ea = ea;
     pd->old_lnnum = lnnum;

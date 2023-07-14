@@ -1,9 +1,9 @@
 # CHANGE ME :-)
 # where IDA_DIR must be the full path to ida.app (not ida64.app)
 # IDA 7.6 example: /Applications/IDA Pro 7.6/ida.app/
-IDA_DIR="/Applications/IDA Pro 7.6/ida.app/"
+IDA_DIR="/Applications/IDA Pro 7.7/ida.app/"
 # path to IDA SDK folder
-IDA_SDK="/Applications/IDA Pro 7.6/idasdk76"
+IDA_SDK="/Applications/IDA Pro 7.7/idasdk77"
 # path to plugins folder
 INSTALL_DIR="/Users/changeme/.idapro/plugins"
 
